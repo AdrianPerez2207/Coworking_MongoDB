@@ -1,0 +1,34 @@
+services:
+  # Nginx
+  web:
+    container_name: nginx_coworking_mongodb
+    image: nginx:latest
+    ports:
+      - "8082:80"
+    volumes:
+      - ./source/:/var/www/
+      - ./nginx.php-fpm.conf:/etc/nginx/nginx.conf:ro
+    links:
+      - php-fpm
+
+  # Configuración de php
+  php-fpm:
+    container_name: php_coworking-mongodb
+    build: .
+    volumes:
+      - ./source:/var/www/html
+
+  # MongoDB
+  mongodb:
+      image: mongo:latest # Especifica la versión de MongoDB que deseas
+      container_name: coworking-mongodb
+      ports:
+        - "27017:27017" # Expone el puerto 27017 al host
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: root # Usuario root inicial
+        MONGO_INITDB_ROOT_PASSWORD: toor # Contraseña root inicial
+      volumes:
+        - mongo-data:/data/db # Volumen para persistencia de datos
+
+volumes:
+  mongo-data:
