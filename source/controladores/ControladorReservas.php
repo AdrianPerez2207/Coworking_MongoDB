@@ -17,7 +17,7 @@ class ControladorReservas{
     }
 
     public static function cancelarReserva($idReserva, $idUsuario){
-        ModeloReservas::cancelarReserva($idUsuario, $idReserva);
+        ModeloReservas::cancelarReserva($idReserva, $idUsuario);
         header("Location: index.php?accion=misReservas");
     }
 

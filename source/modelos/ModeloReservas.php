@@ -2,43 +2,41 @@
 
     namespace Coworking\modelos;
 
-    use PDO;
-
     class ModeloReservas{
+
         /**
-         * Muestra todas las reservas que tiene el usuario
-         * Al hacer el SELECT, se le pone al nombre de la sala el mismo nombre que tiene en la tabla de la BD
-         * @param $id
-         * @return array|false
+         * Muestra todas las reservas que tiene el usuario.
+         * Primero sacamos las reservas con el id del usuario, al tener que crear objetos reserva, tenemos que sacar el nombre del usuario,
+         * y nombres de las salas asociadas a ese usuario.
+         * @param $idUsuario
+         * @return array
          */
-        public static function mostrarMisReservas($id){
+        public static function mostrarMisReservas($idUsuario){
             $conexion = new ConexionBD();
-            //Consulta a la BD
-            $stmt = $conexion->getConexion()->prepare("SELECT r.id, s.nombre as nombre_sala, r.fecha_reserva, r.hora_inicio, r.hora_fin, r.estado
-                                                        FROM reservas r JOIN salas s ON s.id = r.id_sala
-                                                        WHERE r.id_usuario = :id ORDER BY r.estado");
-            $stmt->bindValue(1, $id);
-            //Cambiamos el modo en que nos devuelve el Fetch
-            $stmt->setFetchMode(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, 'Coworking\modelos\Reserva');
-            //Ejecutamos la consulta
-            $stmt->execute();
-            //Obtenemos el resultado
-            $misReservas = $stmt->fetchAll();
-            //Cerrar la conexion
+            //Consulta MongoDB
+            $stmt = $conexion->getConexion()->reserva->find(['id_usuario' => $idUsuario]);
+            $nombreUsuario = $conexion->getConexion()->usuario->findOne(['_id' => $idUsuario], ['projection' => ['nombre' => 1]]);
+            //Pasamos el resultado a objeto
+            foreach ($stmt as $reserva){
+                //Obtenemos el nombre de cada sala que tiene asociada la reserva.
+                $nombreSalas = $conexion->getConexion()->sala->findOne(["_id" => $reserva["id_sala"]]);
+                $reservaObjeto = new Reserva($reserva->_id, $nombreUsuario->nombre, $nombreSalas->nombre, $reserva->fecha_reserva, $reserva->hora_inicio, $reserva->hora_fin);
+                $reservaObjeto->setEstado($reserva->estado);
+                $reservaArray[] = $reservaObjeto;
+            }
+            //Cerramos sesión
             $conexion->cerrarSesion();
-            return $misReservas;
+            return $reservaArray;
         }
 
-        public static function cancelarReserva($idUsuario, $idReserva){
+        public static function cancelarReserva($idReserva, $idUsuario){
             $conexion = new ConexionBD();
-            //Consulta a la BD
-            $stmt = $conexion->getConexion()->prepare("UPDATE reservas SET estado = 'cancelada' WHERE id = :idReserva
-                                                    AND id_usuario = :idUsuario");
-            $stmt->bindValue(1, $idReserva);
-            $stmt->bindValue(2, $idUsuario);
-            //Ejecutamos la consulta
-            $stmt->execute();
-            //Cerrar la conexion
+            //Consulta a MongoDB
+            var_dump($idReserva);
+            var_dump($idUsuario);
+            $conexion->getConexion()->reserva->updateOne(['_id' => $idReserva, 'id_usuario' => $idUsuario],
+                ['$set' => ['estado' => 'cancelada']]);
+            //Cerramos sesión
             $conexion->cerrarSesion();
         }
 
