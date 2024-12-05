@@ -33,7 +33,6 @@ class VistaMisReservas  {
                                     <td><?=$reserva->getHoraInicio(); ?></td>
                                     <td><?=$reserva->getHoraFin(); ?></td>
                                     <td><?=$reserva->getEstado(); ?></td>
-                                    <td><?=$reserva->getId(); ?></td>
                                     <td><a href="index.php?accion=cancelarReserva&id=<?=$reserva->getId(); ?>">
                                             <i class="fa-solid fa-ban fs-5 text-danger"></i></a>
                                     </td>

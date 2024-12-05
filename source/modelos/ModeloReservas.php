@@ -2,6 +2,8 @@
 
     namespace Coworking\modelos;
 
+    use MongoDB\BSON\ObjectId;
+
     class ModeloReservas{
 
         /**
@@ -32,81 +34,75 @@
         public static function cancelarReserva($idReserva, $idUsuario){
             $conexion = new ConexionBD();
             //Consulta a MongoDB
-            var_dump($idReserva);
-            var_dump($idUsuario);
-            $conexion->getConexion()->reserva->updateOne(['_id' => $idReserva, 'id_usuario' => $idUsuario],
+            $conexion->getConexion()->reserva->updateOne(['_id' => new ObjectId($idReserva), 'id_usuario' => $idUsuario],
                 ['$set' => ['estado' => 'cancelada']]);
             //Cerramos sesión
             $conexion->cerrarSesion();
         }
 
         /**
-         * Para crear una reserva, primero se comprueba que no exista una reserva con la misma fecha y hora
-         * Si no existe, se crea la reserva y se actualiza la tabla de reservas
-         * Si ya existe, nos devolvería true
-         * @param $id_sala
          * @param $id_usuario
+         * @param $id_sala
          * @param $fecha_reserva
          * @param $hora_inicio
          * @param $hora_fin
          * @return bool
          */
-        public static function crearReserva($id_usuario, $id_sala, $fecha_reserva, $hora_inicio, $hora_fin){
+        public static function crearReserva($id_usuario, $id_sala, $fecha_reserva, $hora_inicio, $hora_fin)
+        {
             $conexion = new ConexionBD();
             //Comprobamos que no exista una reserva con la misma fecha y hora
-            if (!self::consultarReservas($id_sala, $fecha_reserva, $hora_inicio, $hora_fin)){
+            if (!self::consultarReservas($id_sala, $fecha_reserva, $hora_inicio, $hora_fin)) {
                 return false;
-            }else{
-                //Consulta a la BD. Al insertar los datos, el estado de la reserva es confirmada por defecto.
-                $stmt = $conexion->getConexion()->prepare("INSERT INTO reservas (id_usuario, id_sala, fecha_reserva, hora_inicio, hora_fin, estado) 
-                                                        VALUES (:id_usuario, :id_sala, :fecha_reserva, :hora_inicio, :hora_fin, 'confirmada')");
-                $stmt->bindValue(1, intval($id_usuario));
-                $stmt->bindValue(2, intval($id_sala));
-                $stmt->bindValue(3, $fecha_reserva);
-                $stmt->bindValue(4, $hora_inicio);
-                $stmt->bindValue(5, $hora_fin);
-                //Ejecutamos la consulta
-                $stmt->execute();
-                //Cerrar la conexion
+            } else {
+                //Consulta a MongoDB
+                $conexion->getConexion()->reserva->insertOne([
+                    'id_usuario' => $id_usuario,
+                    //Pasamos el id de la sala como un ObjectId (Estaba pasándolo cómo String)
+                    'id_sala' => new ObjectId($id_sala),
+                    'fecha_reserva' => $fecha_reserva,
+                    'hora_inicio' => $hora_inicio,
+                    'hora_fin' => $hora_fin,
+                    'estado' => 'confirmada'
+                ]);
+                //Cerramos sesión
                 $conexion->cerrarSesion();
                 return true;
             }
         }
 
         /**
-         * Consultamos que las horas de inicio y fin sean correctas y no hagan conflicto con otras insertadas
+         * Consulta a la BD para ver si hay reservas en la misma hora que la solicitada
          * @param $id_sala
          * @param $fecha_reserva
          * @param $hora_inicio
          * @param $hora_fin
          * @return bool
          */
-        public static function consultarReservas($id_sala, $fecha_reserva, $hora_inicio, $hora_fin){
+        public
+        static function consultarReservas($id_sala, $fecha_reserva, $hora_inicio, $hora_fin)
+        {
             $conexion = new ConexionBD();
-            //Consulta a la BD
-            $stmt = $conexion->getConexion()->prepare("SELECT * FROM reservas WHERE id_sala = :id_sala AND 
-                             fecha_reserva = :fecha_reserva AND estado = 'confirmada' AND (
-                                 (:hora_inicio1 BETWEEN hora_inicio AND hora_fin) 
-                                 OR (:hora_fin1 BETWEEN hora_inicio AND hora_fin)
-                                 OR (hora_inicio BETWEEN :hora_inicio2 AND :hora_fin2)
-                                 OR (hora_fin BETWEEN :hora_inicio3 AND :hora_fin3)
-                             )");
-            $stmt->bindValue(1, $id_sala);
-            $stmt->bindValue(2, $fecha_reserva);
-            $stmt->bindValue(3, $hora_inicio);//:hora_inicio1
-            $stmt->bindValue(4, $hora_fin);//:hora_fin1
-            $stmt->bindValue(5, $hora_inicio);//:hora_inicio2
-            $stmt->bindValue(6, $hora_fin);//:hora_fin2
-            $stmt->bindValue(7, $hora_inicio);//:hora_inicio3
-            $stmt->bindValue(8, $hora_fin);//:hora_fin3
-            //Ejecutamos la consulta
-            $stmt->execute();
-            //Cerramos sesión
+            //Consulta MongoDB
+            $stmt = $conexion->getConexion()->reserva->find([
+                'id_sala' => $id_sala,
+                'fecha_reserva' => $fecha_reserva,
+                'estado' => 'confirmada',
+                //Buscamos horas que coincida entre la hora de inicio y la hora de fin.
+                '$or' => [
+                    ['hora_inicio' => ['$gte' => $hora_inicio, '$lte' => $hora_fin]],
+                    ['hora_fin' => ['$gte' => $hora_inicio, '$lte' => $hora_fin]],
+                    ['hora_inicio' => ['$gte' => $hora_inicio, '$lte' => $hora_fin]],
+                    ['hora_fin' => ['$gte' => $hora_inicio, '$lte' => $hora_fin]]
+                ]
+            ]);
+            //Cerrar la conexion
             $conexion->cerrarSesion();
             //Devolvemos false si la consulta devuelve resultados, true en caso contrario
-            if ($stmt->rowCount() > 0){
+            //Con el count() se obtiene el numero de resultados
+            if (count($stmt->toArray()) > 0) {
                 return false;
-            } else{
+            } else {
                 return true;
             }
         }

@@ -30,62 +30,98 @@
             $this->estado = "confirmada";
         }
 
-        public function getId(): mixed
+        /**
+         * @return mixed|string
+         */
+        public function getId()
         {
             return $this->id;
         }
 
-        public function setId(mixed $id): void
+        /**
+         * @param mixed|string $id
+         */
+        public function setId($id): void
         {
             $this->id = $id;
         }
 
-        public function getNombreUsuario(): mixed
+        /**
+         * @return mixed|string
+         */
+        public function getNombreUsuario()
         {
             return $this->nombre_usuario;
         }
 
-        public function setNombreUsuario(mixed $nombre_usuario): void
+        /**
+         * @param mixed|string $nombre_usuario
+         */
+        public function setNombreUsuario($nombre_usuario): void
         {
             $this->nombre_usuario = $nombre_usuario;
         }
 
-        public function getNombreSala(): mixed
+        /**
+         * @return mixed|string
+         */
+        public function getNombreSala()
         {
             return $this->nombre_sala;
         }
 
-        public function setNombreSala(mixed $nombre_sala): void
+        /**
+         * @param mixed|string $nombre_sala
+         */
+        public function setNombreSala($nombre_sala): void
         {
             $this->nombre_sala = $nombre_sala;
         }
 
-        public function getFechaReserva(): mixed
+        /**
+         * @return mixed|string
+         */
+        public function getFechaReserva()
         {
             return $this->fecha_reserva;
         }
 
-        public function setFechaReserva(mixed $fecha_reserva): void
+        /**
+         * @param mixed|string $fecha_reserva
+         */
+        public function setFechaReserva($fecha_reserva): void
         {
             $this->fecha_reserva = $fecha_reserva;
         }
 
-        public function getHoraInicio(): mixed
+        /**
+         * @return mixed|string
+         */
+        public function getHoraInicio()
         {
             return $this->hora_inicio;
         }
 
-        public function setHoraInicio(mixed $hora_inicio): void
+        /**
+         * @param mixed|string $hora_inicio
+         */
+        public function setHoraInicio($hora_inicio): void
         {
             $this->hora_inicio = $hora_inicio;
         }
 
-        public function getHoraFin(): mixed
+        /**
+         * @return mixed|string
+         */
+        public function getHoraFin()
         {
             return $this->hora_fin;
         }
 
-        public function setHoraFin(mixed $hora_fin): void
+        /**
+         * @param mixed|string $hora_fin
+         */
+        public function setHoraFin($hora_fin): void
         {
             $this->hora_fin = $hora_fin;
         }
@@ -99,6 +135,8 @@
         {
             $this->estado = $estado;
         }
+
+
 
 
 
